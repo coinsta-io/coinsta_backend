@@ -1,52 +1,26 @@
-from sqlalchemy import create_engine, Table, ForeignKey
-from sqlalchemy import Column, String, Integer, Date, Boolean
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, relationship
+from flask_sqlalchemy import SQLAlchemy
 
-Base = declarative_base()
+db = SQLAlchemy()
 
-followers = Table('association', Base.metadata,
-                  Column('follower_id', Integer, ForeignKey('user.id')),
-                  Column('following_id', Integer, ForeignKey('user.id'))
-                  )
-
-
-class User(Base):
+class User(db.Model):
     __tablename__ = 'users'
 
-    id = Column(Integer, primary_key=True)
-    username = Column(String, unique=True)
-    email = Column(String, unique=True)
-    password = Column(String)
-    first_name = Column(String)
-    last_name = Column(String)
-    followers = relationship("User",
-                             secondary=followers,
-                             back_populates="following")
-    following = relationship("User",
-                             secondary=followers,
-                             back_populates="followers")
-    posts = relationship("Post", back_populates="owner")
-    register_date = Column(Date)
-    is_admin = Column(Boolean)
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String, nullable=False)
+    email = db.Column(db.String, nullable=False)
+    password = db.Column(db.String, nullable=False)
+    first_name = db.Column(db.String, nullable=True)
+    last_name = db.Column(db.String, nullable=True)
 
-    def __str__(self):
-        return ""
+    def __init__(self, username, email, password, first_name, last_name):
+        self.username = username
+        self.email = email
+        self.password = password
+        self.first_name = first_name
+        self.last_name = last_name
+    
+    def __repr__(self):
+        return "User ID: {}\n, username: {}\n, email: {}\n, first name: {}\n, last name: {}".format(self.id, self.username, self.email, self.password, self.first_name, self.last_name)
 
 
-class Post(Base):
-    __tablename__ = 'posts'
-
-    id = Column(Integer, primary_key=True)
-    content = Column(String)
-    owner = relationship("User", back_populates="posts")
-    coins =
-
-
-class Coin(Base):
-    __tablename__ = 'coins'
-
-    id = Column(Integer, primary_key=True)
-    name = Column(String)
-
-
+    
