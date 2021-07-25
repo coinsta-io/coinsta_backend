@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask, request, jsonify
 import json
 from flask_migrate import Migrate
 from models import User, db
@@ -39,23 +39,41 @@ def getUserById(user_id):
             'firstName': result.first_name,
             'lastName': result.last_name
     }
-    return json.dumps({'user': user})
+    return json.dumps({ 'user': user })
 
 
 @app.route('/users', methods=['POST'])
 def createUser():
-    user = User(
-        request.form.get('username'),
-        request.form.get('email'),
-        bcrypt.hashpw(request.form.get('password'), bcrypt.gensalt()),
-        request.form.get('firstName'),
-        request.form.get('lastName')
-    )
-    db.session.add(user)
-    db.session.commit()
+    users = User.query.all()
+    req = request.get_json(force=True)
+    for user in users:
+        if user.username == req['username']:
+            return json.dumps({ 'success': False, 'reason': 'username' })
+
+    for user in users:
+        if user.email == req['email']:
+            return json.dumps({ 'success': False, 'reason': 'email' })
+
+    if req['password'] != req['confirmPassword']:
+        return json.dumps({ 'success': False, 'reason': 'password' })
+    
+    try:
+        user = User(
+            req['username'],
+            req['email'],
+            bcrypt.hashpw(req['password'].encode('utf-8'), bcrypt.gensalt()),
+            req['firstName'],
+            req['lastName']
+        )
+        db.session.add(user)
+        db.session.commit()
+        return json.dumps({ 'success': True })
+    except Exception as e:
+        return json.dumps({ 'success': False, 'error': e.args })
 
 
-@app.route('/login')
+
+@app.route('/login', methods=['POST'])
 def login():
     username_attempt = request.form.get('username')
     password_attempt = request.form.get('password')
