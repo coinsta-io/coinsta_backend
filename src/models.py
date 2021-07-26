@@ -20,7 +20,7 @@ class User(db.Model):
         self.last_name = last_name
     
     def __repr__(self):
-        return "User ID: {}\n, username: {}\n, email: {}\n, first name: {}\n, last name: {}".format(self.id, self.username, self.email, self.password, self.first_name, self.last_name)
+        return "User ID: {}\n username: {}\n email: {}\n first name: {}\n last name: {}".format(self.id, self.username, self.email, self.first_name, self.last_name)
 
 
     
