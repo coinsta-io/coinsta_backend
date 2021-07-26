@@ -1,10 +1,12 @@
 from flask import Flask, request, jsonify
 import json
+from flask_cors import CORS
 from flask_migrate import Migrate
 from models import User, db
 import bcrypt
 
 app = Flask(__name__)
+CORS(app)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://localhost:5432/coined_db?user=postgres&password=11292000'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -45,31 +47,32 @@ def getUserById(user_id):
 @app.route('/users', methods=['POST'])
 def createUser():
     users = User.query.all()
-    req = request.get_json(force=True)
+    req = request.form
+    
     for user in users:
-        if user.username == req['username']:
+        if user.username == req.get('ussername'):
             return json.dumps({ 'success': False, 'reason': 'username' })
 
     for user in users:
-        if user.email == req['email']:
+        if user.email == req.get('email'):
             return json.dumps({ 'success': False, 'reason': 'email' })
 
-    if req['password'] != req['confirmPassword']:
+    if req['password'] != req.get('confirmPassword'):
         return json.dumps({ 'success': False, 'reason': 'password' })
     
     try:
         user = User(
-            req['username'],
-            req['email'],
-            bcrypt.hashpw(req['password'].encode('utf-8'), bcrypt.gensalt()),
-            req['firstName'],
-            req['lastName']
+            req.get('username'),
+            req.get('email'),
+            bcrypt.hashpw(req.get('password').encode('utf-8'), bcrypt.gensalt()),
+            req.get('firstName'),
+            req.get('lastName')
         )
         db.session.add(user)
         db.session.commit()
-        return json.dumps({ 'success': True })
+        return { 'success': True }
     except Exception as e:
-        return json.dumps({ 'success': False, 'error': e.args })
+        return { 'success': False, 'error': e.args }
 
 
 
