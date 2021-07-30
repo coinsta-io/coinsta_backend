@@ -90,12 +90,10 @@ def login():
                 'utf-8'))):
         return {
             'success': True, 
-            'user': {
+            'userInfo': {
                 'id': user.id,
-                'firstName': user.first_name,
-                'lastName': user.last_name,
                 'username': user.username,
-                'email': user.email
+                'password': user.password
             }
         }
     else:
