@@ -78,7 +78,6 @@ def createUser():
 @app.route('/login', methods=['POST'])
 def login():
     req = request.form
-    print(req.get('password'))
 
     user = User.query.filter_by(username=req.get('username')).first()
 
@@ -98,3 +97,16 @@ def login():
         }
     else:
         return { 'success': False }
+
+@app.route('/auth', methods=['POST'])
+def auth():
+    req = request.form
+    user = User.query.filter_by(username=req.get('username')).first()
+
+    if user is None:
+        return {'success': False}
+    
+    if (req.get('password') == user.password):
+        return {'success': True}
+    else:
+        return {'success': False}
