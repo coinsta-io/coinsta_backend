@@ -2,6 +2,8 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_migrate import Migrate
 from models import User, db
+import requests
+from keys import API_KEY
 import bcrypt
 
 app = Flask(__name__)
@@ -14,7 +16,7 @@ migrate = Migrate(app, db)
 
 
 @app.route('/users', methods=['GET'])
-def getAllUsers():
+def get_all_users():
     results = User.query.all()
     users = []
     for user in results:
@@ -30,7 +32,7 @@ def getAllUsers():
 
 
 @app.route('/users/<user_id>', methods=['GET'])
-def getUserById(user_id):
+def get_user_by_id(user_id):
     result = User.query.filter_by(id=user_id).first_or_404()
     user = {
         'id': result.id,
@@ -44,7 +46,7 @@ def getUserById(user_id):
 
 
 @app.route('/users', methods=['POST'])
-def createUser():
+def create_user():
     users = User.query.all()
     req = request.form
 
@@ -110,3 +112,19 @@ def auth():
         return {'success': True}
     else:
         return {'success': False}
+
+@app.route('/coins', methods=['GET'])
+def get_all_coins():
+    r = requests.get(f'https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest?CMC_PRO_API_KEY={API_KEY}&limit=50')
+    data = r.json()['data']
+    
+    coins = []
+
+    for coin in data:
+        coins.append({
+            'name': coin['name'],
+            'price': str(coin['quote']['USD']['price'])
+        })
+    
+    print(coins)
+    return { 'coins': coins }
