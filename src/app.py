@@ -115,7 +115,7 @@ def auth():
 
 @app.route('/coins', methods=['GET'])
 def get_all_coins():
-    r = requests.get(f'https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest?CMC_PRO_API_KEY={API_KEY}&limit=50')
+    r = requests.get(f'https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest?CMC_PRO_API_KEY={API_KEY}&limit=15')
     data = r.json()['data']
     
     coins = []
@@ -123,8 +123,15 @@ def get_all_coins():
     for coin in data:
         coins.append({
             'name': coin['name'],
-            'price': str(coin['quote']['USD']['price'])
+            'price': str(coin['quote']['USD']['price']),
+            'percentChange24hr': str(coin['quote']['USD']['percent_change_24h'])
         })
+
+    biggest_movers = coins.copy()
+    biggest_movers.sort(key=get_biggest_movers_from_list, reverse=True)
     
-    print(coins)
-    return { 'coins': coins }
+    print(biggest_movers)
+    return { 'coins': coins, 'biggestMovers': biggest_movers }
+
+def get_biggest_movers_from_list(coin):
+    return abs(float(coin['percentChange24hr']))
