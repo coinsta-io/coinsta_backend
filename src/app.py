@@ -115,7 +115,7 @@ def auth():
 
 @app.route('/coins', methods=['GET'])
 def get_all_coins():
-    r = requests.get(f'https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest?CMC_PRO_API_KEY={API_KEY}&limit=15')
+    r = requests.get(f'https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest?CMC_PRO_API_KEY={API_KEY}&limit=100')
     data = r.json()['data']
     
     coins = []
@@ -123,15 +123,36 @@ def get_all_coins():
     for coin in data:
         coins.append({
             'name': coin['name'],
-            'price': str(coin['quote']['USD']['price']),
-            'percentChange24hr': str(coin['quote']['USD']['percent_change_24h'])
+            'price': coin['quote']['USD']['price'],
+            'percentChange24hr': coin['quote']['USD']['percent_change_24h'],
+            'volume24hr': coin['quote']['USD']['volume_24h'],
+            'marketCap': coin['quote']['USD']['market_cap']
         })
 
     biggest_movers = coins.copy()
-    biggest_movers.sort(key=get_biggest_movers_from_list, reverse=True)
+    biggest_movers.sort(key=lambda coin : abs(float(coin['percentChange24hr'])), reverse=True)
     
-    print(biggest_movers)
-    return { 'coins': coins, 'biggestMovers': biggest_movers }
+    biggest_winners = coins.copy()
+    biggest_winners.sort(key=lambda coin : float(coin['percentChange24hr']), reverse=True)
+    
+    biggest_losers = coins.copy()
+    biggest_losers.sort(key=lambda coin : float(coin['percentChange24hr']), reverse=False)
+    
+    biggest_market_cap = coins.copy()
+    biggest_market_cap.sort(key=lambda coin : float(coin['marketCap']), reverse=True)
+
+    biggest_volume = coins.copy()
+    biggest_volume.sort(key=lambda coin : float(coin['volume24hr']), reverse=True)
+
+
+    print(str(data[0]['quote']['USD']))
+    return { 'coins': coins[:24], 
+            'biggestMovers': biggest_movers[:24],
+            'biggestWinners': biggest_winners[:24],
+            'biggestLosers': biggest_losers[:24],
+            'biggestMarketCap': biggest_market_cap[:24],
+            'biggestVolume': biggest_volume[:24]
+             }
 
 def get_biggest_movers_from_list(coin):
     return abs(float(coin['percentChange24hr']))
