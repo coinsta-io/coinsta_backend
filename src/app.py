@@ -1,20 +1,45 @@
-from flask import Flask, request, jsonify
+import time
+import bcrypt
+import requests
+import schedule
+import threading
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_migrate import Migrate
+
+import keys
 from models import User, db
-import requests
-from keys import API_KEY
-import bcrypt
 
 app = Flask(__name__)
 CORS(app)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://localhost:5432/coined_db?user=postgres&password=11292000'
+app.config['SQLALCHEMY_DATABASE_URI'] = f'postgresql://localhost:5432/coined_db?user={keys.DB_USERNAME}&password={keys.DB_PASSWORD}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
 migrate = Migrate(app, db)
 
+#scheduled job that will get the coin data in intervals rather than making api call
+#for every page load
+coins = []
+@schedule.repeat(schedule.every(3).hours)
+def get_crypto_data():
+    r = requests.get(f'https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest?CMC_PRO_API_KEY={keys.API_KEY}&limit=100')
+    data = r.json()['data']
+    
+    global coins
+    coins = []
 
+    for coin in data:
+        coins.append({
+            'name': coin['name'],
+            'price': coin['quote']['USD']['price'],
+            'percentChange24hr': coin['quote']['USD']['percent_change_24h'],
+            'volume24hr': coin['quote']['USD']['volume_24h'],
+            'marketCap': coin['quote']['USD']['market_cap']
+        })
+get_crypto_data()
+
+#routes, need to restructure these into separate packages instead of one big file later
 @app.route('/users', methods=['GET'])
 def get_all_users():
     results = User.query.all()
@@ -115,19 +140,8 @@ def auth():
 
 @app.route('/coins', methods=['GET'])
 def get_all_coins():
-    r = requests.get(f'https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest?CMC_PRO_API_KEY={API_KEY}&limit=100')
-    data = r.json()['data']
-    
-    coins = []
 
-    for coin in data:
-        coins.append({
-            'name': coin['name'],
-            'price': coin['quote']['USD']['price'],
-            'percentChange24hr': coin['quote']['USD']['percent_change_24h'],
-            'volume24hr': coin['quote']['USD']['volume_24h'],
-            'marketCap': coin['quote']['USD']['market_cap']
-        })
+    global coins
 
     biggest_movers = coins.copy()
     biggest_movers.sort(key=lambda coin : abs(float(coin['percentChange24hr'])), reverse=True)
@@ -144,8 +158,6 @@ def get_all_coins():
     biggest_volume = coins.copy()
     biggest_volume.sort(key=lambda coin : float(coin['volume24hr']), reverse=True)
 
-
-    print(str(data[0]['quote']['USD']))
     return { 'coins': coins[:24], 
             'biggestMovers': biggest_movers[:24],
             'biggestWinners': biggest_winners[:24],
@@ -156,3 +168,10 @@ def get_all_coins():
 
 def get_biggest_movers_from_list(coin):
     return abs(float(coin['percentChange24hr']))
+
+def run_scheduled_jobs():
+    while True:
+        schedule.run_pending()
+        time.sleep(1)
+
+data_thread = threading.Thread(target=run_scheduled_jobs)
