@@ -21,11 +21,12 @@ migrate = Migrate(app, db)
 #scheduled job that will get the coin data in intervals rather than making api call
 #for every page load
 coins = []
-@schedule.repeat(schedule.every(3).hours)
 def get_crypto_data():
     r = requests.get(f'https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest?CMC_PRO_API_KEY={keys.API_KEY}&limit=100')
     data = r.json()['data']
     
+    print("getting some data")
+
     global coins
     coins = []
 
@@ -38,6 +39,7 @@ def get_crypto_data():
             'marketCap': coin['quote']['USD']['market_cap']
         })
 get_crypto_data()
+schedule.every().minute.do(get_crypto_data)
 
 #routes, need to restructure these into separate packages instead of one big file later
 @app.route('/users', methods=['GET'])
@@ -174,4 +176,4 @@ def run_scheduled_jobs():
         schedule.run_pending()
         time.sleep(1)
 
-data_thread = threading.Thread(target=run_scheduled_jobs)
+threading._start_new_thread(run_scheduled_jobs, ())
