@@ -9,6 +9,7 @@ from flask_migrate import Migrate
 
 import keys
 from models import User, db
+from btc_svc_reader import get_sample_btc_data
 
 app = Flask(__name__)
 CORS(app)
@@ -39,7 +40,13 @@ def get_crypto_data():
             'marketCap': coin['quote']['USD']['market_cap']
         })
 get_crypto_data()
-schedule.every().minute.do(get_crypto_data)
+schedule.every(2).hours.do(get_crypto_data)
+def run_scheduled_jobs():
+    while True:
+        schedule.run_pending()
+        time.sleep(1)
+
+threading._start_new_thread(run_scheduled_jobs, ())
 
 #routes, need to restructure these into separate packages instead of one big file later
 @app.route('/users', methods=['GET'])
@@ -142,38 +149,50 @@ def auth():
 
 @app.route('/coins', methods=['GET'])
 def get_all_coins():
-
+    args = request.args.get('coins')
     global coins
 
-    biggest_movers = coins.copy()
-    biggest_movers.sort(key=lambda coin : abs(float(coin['percentChange24hr'])), reverse=True)
+    #get every coin
+    if args is None:
+
+        biggest_movers = coins.copy()
+        biggest_movers.sort(key=lambda coin : abs(float(coin['percentChange24hr'])), reverse=True)
+        
+        biggest_winners = coins.copy()
+        biggest_winners.sort(key=lambda coin : float(coin['percentChange24hr']), reverse=True)
+        
+        biggest_losers = coins.copy()
+        biggest_losers.sort(key=lambda coin : float(coin['percentChange24hr']), reverse=False)
+        
+        biggest_market_cap = coins.copy()
+        biggest_market_cap.sort(key=lambda coin : float(coin['marketCap']), reverse=True)
+
+        biggest_volume = coins.copy()
+        biggest_volume.sort(key=lambda coin : float(coin['volume24hr']), reverse=True)
+
+        return { 'coins': coins[:24], 
+                'biggestMovers': biggest_movers[:24],
+                'biggestWinners': biggest_winners[:24],
+                'biggestLosers': biggest_losers[:24],
+                'biggestMarketCap': biggest_market_cap[:24],
+                'biggestVolume': biggest_volume[:24]
+                }
+
+    print(coins[0])
+    names = args.split(',')
+    filtered_coins = filter(lambda coin : coin['name'].lower() in names, coins)
+    return { 'coins': list(filtered_coins) }
+
+
     
-    biggest_winners = coins.copy()
-    biggest_winners.sort(key=lambda coin : float(coin['percentChange24hr']), reverse=True)
+
+@app.route('/coins/historical', methods=['GET'])
+def get_coin_history():
+    coin_names = request.args.get('coinNames')
+    pass
     
-    biggest_losers = coins.copy()
-    biggest_losers.sort(key=lambda coin : float(coin['percentChange24hr']), reverse=False)
-    
-    biggest_market_cap = coins.copy()
-    biggest_market_cap.sort(key=lambda coin : float(coin['marketCap']), reverse=True)
-
-    biggest_volume = coins.copy()
-    biggest_volume.sort(key=lambda coin : float(coin['volume24hr']), reverse=True)
-
-    return { 'coins': coins[:24], 
-            'biggestMovers': biggest_movers[:24],
-            'biggestWinners': biggest_winners[:24],
-            'biggestLosers': biggest_losers[:24],
-            'biggestMarketCap': biggest_market_cap[:24],
-            'biggestVolume': biggest_volume[:24]
-             }
-
-def get_biggest_movers_from_list(coin):
-    return abs(float(coin['percentChange24hr']))
-
-def run_scheduled_jobs():
-    while True:
-        schedule.run_pending()
-        time.sleep(1)
-
-threading._start_new_thread(run_scheduled_jobs, ())
+    """
+    TODO:
+        Setup API call for coin historical data once we have it.
+        Take query string with the names of coins data is needed for.
+    """
