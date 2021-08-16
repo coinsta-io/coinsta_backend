@@ -178,9 +178,11 @@ def get_all_coins():
                 'biggestVolume': biggest_volume[:24]
                 }
 
-    print(coins[0])
     names = args.split(',')
-    filtered_coins = filter(lambda coin : coin['name'].lower() in names, coins)
+    filtered_coins = list(filter(lambda coin : coin['name'].lower() in names, coins))
+    for coin in filtered_coins:
+        # coin['history'] = get_sample_btc_data()
+        coin['history'] = get_sample_btc_data()
     return { 'coins': list(filtered_coins) }
 
 

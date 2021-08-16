@@ -1,5 +1,5 @@
 def get_sample_btc_data():
-    f = open("gemini_BTCUSD_1hr.csv", "r")
+    f = open("../gemini_BTCUSD_1hr.csv", "r")
 
     lines = f.readlines()
     lines = lines[2::24]
