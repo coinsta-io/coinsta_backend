@@ -34,6 +34,7 @@ def get_crypto_data():
     for coin in data:
         coins.append({
             'name': coin['name'],
+            'symbol': coin['symbol'],
             'price': coin['quote']['USD']['price'],
             'percentChange24hr': coin['quote']['USD']['percent_change_24h'],
             'volume24hr': coin['quote']['USD']['volume_24h'],
@@ -186,7 +187,7 @@ def get_all_coins():
     return { 'coins': list(filtered_coins) }
 
 
-    
+
 
 @app.route('/coins/historical', methods=['GET'])
 def get_coin_history():
