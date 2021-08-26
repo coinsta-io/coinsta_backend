@@ -11,6 +11,8 @@ class User(db.Model):
     password = db.Column(db.String, nullable=False)
     first_name = db.Column(db.String, nullable=True)
     last_name = db.Column(db.String, nullable=True)
+    
+    posts = db.relationship('Post', backref='author', lazy=True)
 
     def __init__(self, username, email, password, first_name, last_name):
         self.username = username
@@ -22,5 +24,11 @@ class User(db.Model):
     def __repr__(self):
         return "User ID: {}\n username: {}\n email: {}\n first name: {}\n last name: {}".format(self.id, self.username, self.email, self.first_name, self.last_name)
 
-    
+class Post(db.Model):
+    __tablename__ = 'posts'
+
+    id = db.Column(db.Integer, primary_key=True)
+    body = db.Column(db.Text, nullable=False)
+    author_id = db.Column(db.Integer, db.ForeignKey('author.id'), nullable=False)
+
     
